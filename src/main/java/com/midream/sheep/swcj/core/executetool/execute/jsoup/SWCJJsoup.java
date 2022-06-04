@@ -20,16 +20,16 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.*;
 
 /**
  * @author midreamsheep
  */
-public class SWCJJsoup implements SWCJExecute {
+public class SWCJJsoup<T> implements SWCJExecute<T> {
     @Override
-    @SuppressWarnings("all")
-    public List execute(ExecuteValue executeValue, String... args) throws Exception {
+    public T[] execute(ExecuteValue executeValue,T[] in, String... args) throws Exception {
         //获取节点对象
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -38,7 +38,7 @@ public class SWCJJsoup implements SWCJExecute {
         Document document = getConnection(executeValue);
         Map<String, List<String>> map = executeCorn(document, parse, executeValue.isHtml());
         if(executeValue.getClassNameReturn().equals(Constant.STRING_CLASS_NAME)){
-            return map.get("string");
+            return map.get("string").toArray(in);
         }
         Class<?> aClass = Class.forName(executeValue.getClassNameReturn().replace("[]",""));
         List<Integer> list = new LinkedList<>();
@@ -46,7 +46,7 @@ public class SWCJJsoup implements SWCJExecute {
             list.add(map.get(jsoup.getName()).size());
         }
         int max = Collections.min(Arrays.asList(list.toArray(new Integer[]{})));
-        List listw = new LinkedList();
+        List<T> listw = new LinkedList<>();
 
         for (int i = 0;i< max;i++) {
             Object o = aClass.getDeclaredConstructor().newInstance();
@@ -56,9 +56,9 @@ public class SWCJJsoup implements SWCJExecute {
                 List<String> list1 = map.get(name);
                 repay1.invoke(o, list1.size() > i ? map.get(name).get(i) : "");
             }
-            listw.add(o);
+            listw.add((T)o);
         }
-        return listw;
+        return listw.toArray(in);
     }
     private Map<String,List<String>> executeCorn(Document document,Jsoup[] parse,boolean isHtml){
         Map<String,List<String>> values = new LinkedHashMap<>();
@@ -129,7 +129,7 @@ public class SWCJJsoup implements SWCJExecute {
         return document;
     }
     /**
-     * @description Static inner classes parse XML
+     * Static inner classes parse XML
      * */
     public static class Parse {
         public static Jsoup[] parse(NodeList jsoup) throws ConfigException {
