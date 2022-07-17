@@ -66,28 +66,29 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
             Elements elements = null;
             for (int a = 0; a < js.getPas().length; a++) {
                 Pa pa = js.getPas()[a];
-                if (a == 0) {
-                    elements = executePa(pa, document.select(pa.getValue()));
-                } else {
+                if (a != 0) {
                     Elements elements1 = new Elements();
                     for (Element element : elements) {
                         Elements pa1 = executePa(pa, element.select(pa.getValue()));
                         elements1.addAll(pa1);
                     }
                     elements = elements1;
+                } else {
+                    elements = executePa(pa, document.select(pa.getValue()));
                 }
-                if (a == js.getPas().length - 1) {
-                    for (Element element : elements) {
-                        String in = js.getPas()[js.getPas().length - 1].getElement();
-                        if ("".equals(in)) {
-                            if (isHtml) {
-                                list.add(element.html());
-                            } else {
-                                list.add(element.text());
-                            }
-                        } else {
-                            list.add(element.attr(in));
-                        }
+                if (a != js.getPas().length - 1) {
+                    continue;
+                }
+                for (Element element : elements) {
+                    String in = js.getPas()[js.getPas().length - 1].getElement();
+                    if (!"".equals(in)) {
+                        list.add(element.attr(in));
+                        continue;
+                    }
+                    if (isHtml) {
+                        list.add(element.html());
+                    } else {
+                        list.add(element.text());
                     }
                 }
             }
