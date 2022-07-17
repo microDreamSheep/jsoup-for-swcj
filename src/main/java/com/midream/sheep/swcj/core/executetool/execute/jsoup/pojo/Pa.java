@@ -14,40 +14,45 @@ public class Pa {
         return not;
     }
 
-    public void setNot(String not) {
+    public Pa setNot(String not) {
         this.not = not;
+        return this;
     }
 
     public int getAllstep() {
         return allstep;
     }
 
-    public void setAllstep(int allstep) {
+    public Pa setAllstep(int allstep) {
         this.allstep = allstep;
+        return this;
     }
 
     public int getStep() {
         return step;
     }
 
-    public void setStep(int step) {
+    public Pa setStep(int step) {
         this.step = step;
+        return this;
     }
 
     public String getElement() {
         return element;
     }
 
-    public void setElement(String element) {
+    public Pa setElement(String element) {
         this.element = element;
+        return this;
     }
 
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public Pa setValue(String value) {
         this.value = value;
+        return this;
     }
 
     @Override

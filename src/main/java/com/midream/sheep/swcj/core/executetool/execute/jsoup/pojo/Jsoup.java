@@ -21,15 +21,17 @@ public class Jsoup {
         return name;
     }
 
-    public void setName(String name) {
+    public Jsoup setName(String name) {
         this.name = name;
+        return this;
     }
 
     public Pa[] getPas() {
         return pas;
     }
 
-    public void setPas(Pa[] pas) {
+    public Jsoup setPas(Pa[] pas) {
         this.pas = pas;
+        return this;
     }
 }

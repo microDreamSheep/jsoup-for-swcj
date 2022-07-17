@@ -4,7 +4,6 @@ import com.midream.sheep.swcj.Exception.ConfigException;
 import com.midream.sheep.swcj.core.executetool.SWCJExecute;
 import com.midream.sheep.swcj.core.executetool.execute.jsoup.pojo.Jsoup;
 import com.midream.sheep.swcj.core.executetool.execute.jsoup.pojo.Pa;
-import com.midream.sheep.swcj.data.Constant;
 import com.midream.sheep.swcj.pojo.ExecuteValue;
 import com.midream.sheep.swcj.util.function.StringUtil;
 import org.jsoup.Connection;
@@ -20,7 +19,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -29,7 +27,7 @@ import java.util.*;
  */
 public class SWCJJsoup<T> implements SWCJExecute<T> {
     @Override
-    public T[] execute(ExecuteValue executeValue,T[] in, String... args) throws Exception {
+    public List<T> execute(ExecuteValue executeValue, String... args) throws Exception {
         //获取节点对象
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -37,8 +35,8 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
         Jsoup[] parse = Parse.parse(d);
         Document document = getConnection(executeValue);
         Map<String, List<String>> map = executeCorn(document, parse, executeValue.isHtml());
-        if(executeValue.getClassNameReturn().equals(Constant.STRING_CLASS_NAME)){
-            return map.get("string").toArray(in);
+        if(executeValue.getClassNameReturn().equals("java.lang.String[]")){
+            return (List<T>) map.get("string");
         }
         Class<?> aClass = Class.forName(executeValue.getClassNameReturn().replace("[]",""));
         List<Integer> list = new LinkedList<>();
@@ -58,7 +56,7 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
             }
             listw.add((T)o);
         }
-        return listw.toArray(in);
+        return listw;
     }
     private Map<String,List<String>> executeCorn(Document document,Jsoup[] parse,boolean isHtml){
         Map<String,List<String>> values = new LinkedHashMap<>();
@@ -111,22 +109,14 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
     /**
      * @param executeValue necessary data
      * */
-    private Document getConnection(ExecuteValue executeValue) throws ConfigException, IOException {
+    private Document getConnection(ExecuteValue executeValue) throws IOException {
         Connection connection = org.jsoup.Jsoup.connect(executeValue.getUrl()).userAgent(executeValue.getUserAge()).
                 cookies(executeValue.getValues()).ignoreContentType(true).data(executeValue.getValues()).
                 timeout(Integer.parseInt(executeValue.getTimeout()));
-        Document document;
-        switch (executeValue.getType()){
-            case GET:
-                document = connection.get();
-                break;
-            case POST:
-                document = connection.post();
-                break;
-            default:
-                throw new ConfigException("不存在请求类型");
-        }
-        return document;
+        return switch (executeValue.getType()) {
+            case GET -> connection.get();
+            case POST -> connection.post();
+        };
     }
     /**
      * Static inner classes parse XML
@@ -142,9 +132,7 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
             if("jsoup".equals(s)) {
                 jsoups = parseJsoup(jsoup);
             }else if("pa".equals(s)){
-                Jsoup jsoup1 = new Jsoup();
-                jsoup1.setPas(parsePa(jsoup));
-                jsoups = new Jsoup[]{jsoup1};
+                jsoups = new Jsoup[]{new Jsoup().setPas(parsePa(jsoup))};
             }else {
                 throw new ConfigException("你的配置文件有问题");
             }
@@ -157,10 +145,7 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
                 if(item.getNodeName().equals("#text")){
                     continue;
                 }
-                Jsoup js = new Jsoup();
-                js.setName(item.getAttributes().getNamedItem("name").getNodeValue());
-                js.setPas(parsePa(item.getChildNodes()));
-                list.add(js);
+                list.add(new Jsoup().setName(item.getAttributes().getNamedItem("name").getNodeValue()).setPas(parsePa(item.getChildNodes())));
             }
             return list.toArray(new Jsoup[]{});
         }
@@ -169,13 +154,13 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
             for (int i = 1; i < pa.getLength(); i+=2) {
                 Node item = pa.item(i);
                 NamedNodeMap nodeMap = item.getAttributes();
-                Pa p = new Pa();
-                p.setAllstep(Integer.parseInt(nodeMap.getNamedItem("allStep").getNodeValue()));
-                p.setNot(nodeMap.getNamedItem("not").getNodeValue());
-                p.setStep(Integer.parseInt(nodeMap.getNamedItem("step").getNodeValue()));
-                p.setElement(nodeMap.getNamedItem("element").getNodeValue());
-                p.setValue(item.getTextContent().trim());
-                list.add(p);
+                list.add(new Pa()
+                        .setAllstep(Integer.parseInt(nodeMap.getNamedItem("allStep").getNodeValue()))
+                        .setNot(nodeMap.getNamedItem("not").getNodeValue())
+                        .setStep(Integer.parseInt(nodeMap.getNamedItem("step").getNodeValue()))
+                        .setElement(nodeMap.getNamedItem("element").getNodeValue())
+                        .setValue(item.getTextContent().trim())
+                );
             }
             return list.toArray(new Pa[]{});
         }
