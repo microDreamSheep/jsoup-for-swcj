@@ -36,16 +36,17 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
         Document document = getConnection(executeValue);
         Map<String, List<String>> map = executeCorn(document, parse, executeValue.isHtml());
         if(executeValue.getClassNameReturn().equals("java.lang.String[]")){
-            return (List<T>) map.get("string");
+            @SuppressWarnings("unchecked")
+            List<T> list = (List<T>) map.get("string");
+            return list;
         }
         Class<?> aClass = Class.forName(executeValue.getClassNameReturn().replace("[]",""));
         List<Integer> list = new LinkedList<>();
-        for (Jsoup jsoup : parse) {
-            list.add(map.get(jsoup.getName()).size());
-        }
-        int max = Collections.min(Arrays.asList(list.toArray(new Integer[]{})));
-        List<T> listw = new LinkedList<>();
+        Arrays.stream(parse).forEach(jsoup->list.add(map.get(jsoup.getName()).size()));
 
+        int max = Collections.min(Arrays.asList(list.toArray(new Integer[]{})));
+
+        List<T> listw = new LinkedList<>();
         for (int i = 0;i< max;i++) {
             Object o = aClass.getDeclaredConstructor().newInstance();
             for (Jsoup jsoup : parse) {
@@ -54,46 +55,49 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
                 List<String> list1 = map.get(name);
                 repay1.invoke(o, list1.size() > i ? map.get(name).get(i) : "");
             }
-            listw.add((T)o);
+            @SuppressWarnings("unchecked")
+            T t = (T) o;
+            listw.add(t);
         }
         return listw;
     }
     private Map<String,List<String>> executeCorn(Document document,Jsoup[] parse,boolean isHtml){
         Map<String,List<String>> values = new LinkedHashMap<>();
-        for (Jsoup js : parse) {
-            List<String> list = new LinkedList<>();
-            values.put("".equals(js.getName()) ? "string" : js.getName(), list);
-            Elements elements = null;
-            for (int a = 0; a < js.getPas().length; a++) {
-                Pa pa = js.getPas()[a];
-                if (a != 0) {
-                    Elements elements1 = new Elements();
-                    for (Element element : elements) {
-                        Elements pa1 = executePa(pa, element.select(pa.getValue()));
-                        elements1.addAll(pa1);
-                    }
-                    elements = elements1;
-                } else {
-                    elements = executePa(pa, document.select(pa.getValue()));
+        Arrays.stream(parse).forEach(js->executeJsoup(values,js,isHtml,document));
+        return values;
+    }
+    private void executeJsoup(Map<String,List<String>> values,Jsoup js,Boolean isHtml,Element document){
+        List<String> list = new LinkedList<>();
+        values.put("".equals(js.getName()) ? "string" : js.getName(), list);
+        Elements elements = null;
+        for (int a = 0; a < js.getPas().length; a++) {
+            Pa pa = js.getPas()[a];
+            if (a != 0) {
+                Elements elements1 = new Elements();
+                for (Element element : elements) {
+                    Elements pa1 = executePa(pa, element.select(pa.getValue()));
+                    elements1.addAll(pa1);
                 }
-                if (a != js.getPas().length - 1) {
+                elements = elements1;
+            } else {
+                elements = executePa(pa, document.select(pa.getValue()));
+            }
+            if (a != js.getPas().length - 1) {
+                continue;
+            }
+            for (Element element : elements) {
+                String in = js.getPas()[js.getPas().length - 1].getElement();
+                if (!"".equals(in)) {
+                    list.add(element.attr(in));
                     continue;
                 }
-                for (Element element : elements) {
-                    String in = js.getPas()[js.getPas().length - 1].getElement();
-                    if (!"".equals(in)) {
-                        list.add(element.attr(in));
-                        continue;
-                    }
-                    if (isHtml) {
-                        list.add(element.html());
-                    } else {
-                        list.add(element.text());
-                    }
+                if (isHtml) {
+                    list.add(element.html());
+                } else {
+                    list.add(element.text());
                 }
             }
         }
-        return values;
     }
     private Elements executePa(Pa p,Elements select){
         Elements elements = new Elements();
