@@ -3,6 +3,7 @@ package com.midream.sheep.swcj.core.executetool.execute.jsoup;
 import com.midream.sheep.api.clazz.ClazzBuilder;
 import com.midream.sheep.swcj.Exception.ConfigException;
 import com.midream.sheep.swcj.core.executetool.SWCJExecute;
+import com.midream.sheep.swcj.core.executetool.execute.jsoup.allocate.html.IsHtmlAllocateHandler;
 import com.midream.sheep.swcj.core.executetool.execute.jsoup.pojo.Jsoup;
 import com.midream.sheep.swcj.core.executetool.execute.jsoup.pojo.Pa;
 import com.midream.sheep.swcj.pojo.ExecuteValue;
@@ -56,21 +57,23 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
         return values;
     }
     private void executeJsoup(Map<String,List<String>> values,Jsoup js,Boolean isHtml,Element document){
+        //是否html分派器
+        IsHtmlAllocateHandler isHtmlAllocateHandler = isHtml?IsHtmlAllocateHandler.IS_HTML:IsHtmlAllocateHandler.NOT_HTML;
         List<String> list = new LinkedList<>();
         values.put("".equals(js.getName()) ? "string" : js.getName(), list);
         Elements elements = null;
-        for (int a = 0; a < js.getPas().length; a++) {
-            Pa pa = js.getPas()[a];
-            if (a != 0) {
-                Elements elements1 = new Elements();
+        for (int pointer = 0; pointer < js.getPas().length; pointer++) {
+            Pa pa = js.getPas()[pointer];
+            if (pointer != 0) {
+                Elements childElements = new Elements();
                 for (Element element : elements) {
-                    elements1.addAll(executePa(pa,element.select(pa.getValue())));
+                    childElements.addAll(executePa(pa,element.select(pa.getValue())));
                 }
-                elements = elements1;
+                elements = childElements;
             } else {
                 elements = executePa(pa, document.select(pa.getValue()));
             }
-            if (a != js.getPas().length - 1) {
+            if (pointer != js.getPas().length - 1) {
                 continue;
             }
             for (Element element : elements) {
@@ -79,11 +82,7 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
                     list.add(element.attr(in));
                     continue;
                 }
-                if (isHtml) {
-                    list.add(element.html());
-                } else {
-                    list.add(element.text());
-                }
+                list.add(isHtmlAllocateHandler.addAContent(element));
             }
         }
     }
