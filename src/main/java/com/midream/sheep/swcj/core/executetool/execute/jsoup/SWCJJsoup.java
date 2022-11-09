@@ -1,11 +1,11 @@
 package com.midream.sheep.swcj.core.executetool.execute.jsoup;
 
+import com.midream.sheep.api.clazz.ClazzBuilder;
 import com.midream.sheep.swcj.Exception.ConfigException;
 import com.midream.sheep.swcj.core.executetool.SWCJExecute;
 import com.midream.sheep.swcj.core.executetool.execute.jsoup.pojo.Jsoup;
 import com.midream.sheep.swcj.core.executetool.execute.jsoup.pojo.Pa;
 import com.midream.sheep.swcj.pojo.ExecuteValue;
-import com.midream.sheep.swcj.util.function.StringUtil;
 import org.jsoup.Connection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,11 +15,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -27,39 +25,30 @@ import java.util.*;
  */
 public class SWCJJsoup<T> implements SWCJExecute<T> {
     @Override
+    @SuppressWarnings("unchecked")
     public List<T> execute(ExecuteValue executeValue, String... args) throws Exception {
         //获取节点对象
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        NodeList d = builder.parse(new InputSource(new StringReader(args[0].replace("&gt;",">").trim()))).getElementsByTagName("jsoup");
-        Jsoup[] parse = Parse.parse(d);
-        Document document = getConnection(executeValue);
-        Map<String, List<String>> map = executeCorn(document, parse, executeValue.isHtml());
-        if(executeValue.getClassNameReturn().equals("java.lang.String[]")){
-            @SuppressWarnings("unchecked")
-            List<T> list = (List<T>) map.get("string");
-            return list;
-        }
-        Class<?> aClass = Class.forName(executeValue.getClassNameReturn().replace("[]",""));
-        List<Integer> list = new LinkedList<>();
-        Arrays.stream(parse).forEach(jsoup->list.add(map.get(jsoup.getName()).size()));
-
-        int max = Collections.min(Arrays.asList(list.toArray(new Integer[]{})));
-
-        List<T> listw = new LinkedList<>();
-        for (int i = 0;i< max;i++) {
-            Object o = aClass.getDeclaredConstructor().newInstance();
-            for (Jsoup jsoup : parse) {
-                String name = jsoup.getName();
-                Method repay1 = aClass.getMethod("set" + StringUtil.StringToUpperCase(name), String.class);
-                List<String> list1 = map.get(name);
-                repay1.invoke(o, list1.size() > i ? map.get(name).get(i) : "");
-            }
-            @SuppressWarnings("unchecked")
-            T t = (T) o;
-            listw.add(t);
-        }
-        return listw;
+        NodeList d = DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .parse(
+                        new InputSource(new StringReader(args[0].replace("&gt;",">").trim()))
+                )
+                .getElementsByTagName("jsoup");
+        Map<String, List<String>> map = executeCorn(
+                getConnection(executeValue),
+                Parse.parse(d),
+                executeValue.isHtml()
+        );
+        return (List<T>)(
+                executeValue.getClassNameReturn().equals("java.lang.String[]")?
+                        map.get("string")
+                        :
+                        buildByMap(map,executeValue.getClassNameReturn().replace("[]","")));
+    }
+    private List<?> buildByMap(Map<String, List<String>> map, String className) throws Exception {
+        ClazzBuilder clazzBuilder = new ClazzBuilder();
+        clazzBuilder.setClass(className);
+        return clazzBuilder.buildByMap(map);
     }
     private Map<String,List<String>> executeCorn(Document document,Jsoup[] parse,boolean isHtml){
         Map<String,List<String>> values = new LinkedHashMap<>();
@@ -111,10 +100,14 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
         Connection connection = org.jsoup.Jsoup.connect(executeValue.getUrl()).userAgent(executeValue.getUserAge()).
                 cookies(executeValue.getValues()).ignoreContentType(true).data(executeValue.getValues()).
                 timeout(Integer.parseInt(executeValue.getTimeout()));
-        return switch (executeValue.getType()) {
-            case GET -> connection.get();
-            case POST -> connection.post();
+
+        switch (executeValue.getType()) {
+            case GET:
+                return connection.get();
+            case POST:
+                return connection.post();
         };
+        return connection.get();
     }
     /**
      * Static inner classes parse XML
