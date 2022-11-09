@@ -63,7 +63,9 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
             Pa pa = js.getPas()[a];
             if (a != 0) {
                 Elements elements1 = new Elements();
-                elements.forEach(element ->elements1.addAll(executePa(pa,element.select(pa.getValue()))));
+                for (Element element : elements) {
+                    elements1.addAll(executePa(pa,element.select(pa.getValue())));
+                }
                 elements = elements1;
             } else {
                 elements = executePa(pa, document.select(pa.getValue()));
@@ -89,7 +91,12 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
         Elements elements = new Elements();
         for(int i = p.getStep();i<select.size();i+=(p.getAllstep()+1)){
             Element element = select.get(i);
-            Arrays.stream(p.getNot().split(",")).filter(s->!element.text().equals(s)).forEach(e-> elements.add(element));
+            for (String s : p.getNot().split(",")) {
+                if(element.text().equals(s)){
+                    continue;
+                }
+                elements.add(element);
+            }
         }
         return elements;
     }
