@@ -17,7 +17,12 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.15.1</version>
+            <version>1.15.3</version>
+        </dependency>
+        <dependency>
+            <groupId>live.midreamsheep.swcj</groupId>
+            <artifactId>SWCJ-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
