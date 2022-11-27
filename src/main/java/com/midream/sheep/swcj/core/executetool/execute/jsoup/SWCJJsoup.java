@@ -46,7 +46,7 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
                         :
                         buildByMap(map,executeValue.getClassNameReturn().replace("[]","")));
     }
-    private List<?> buildByMap(Map<String, List<String>> map, String className) throws Exception {
+    private List<?> buildByMap(Map<String, List<String>> map, String className) {
         ClazzBuilder clazzBuilder = new ClazzBuilder();
         clazzBuilder.setClass(className);
         return clazzBuilder.buildByMap(map);
@@ -112,7 +112,7 @@ public class SWCJJsoup<T> implements SWCJExecute<T> {
                 return connection.get();
             case POST:
                 return connection.post();
-        };
+        }
         return connection.get();
     }
     /**
